@@ -8,7 +8,5 @@ big query key와 steam api key 폴더 내 위치 및 기입 필요
 
 ## Airflow 예상안
 
-PostgreSQL >> Big query >> Train
-           ㄴ 1         ㄴ 2
-
+PostgreSQL >1번> Big query >2번> Train
 2번은 매일 utc 기준 22시로 Train되는 것으로 정해져있으나, 1번은 구현 X
