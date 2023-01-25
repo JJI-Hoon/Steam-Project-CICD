@@ -20,6 +20,11 @@ from torch.nn.init import normal_
 from sklearn.preprocessing import LabelEncoder
 import joblib
 
+from datetime import timedelta
+from airflow import DAG
+from airflow.utils.dates import days_ago
+from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -302,5 +307,22 @@ def main():
     matrix = make_UIdataset(train, 2)
     training(matrix, data ,n_users, n_items, epochs=1, batch_size=1024)
     
-if __name__ =="__main__":
-    main()
+with DAG(
+    dag_id = "model_train",
+    description = "model_train",
+    start_date=days_ago(2),
+    schedule_interval="0 22 * * *",
+    tags=['model']
+) as dag:
+    
+    
+    t1 = PythonOperator(
+        task_id = "model_train",
+        python_callable=main,
+        depends_on_past=True,
+        owner="JWS",
+        retries=3,
+        retry_delay=timedelta(minutes=5)
+    )
+    
+    t1
