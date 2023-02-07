@@ -11,7 +11,7 @@ on:
 # Dockerfile -> Image Build 필요, Drive URL
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  DOCKER_IMAGE_NAME: steamrec-deploy
+  DOCKER_IMAGE_NAME: steam-cicd
   GCE_INSTANCE: ${{ secrets.GCE_INSTANCE }}
   GCE_INSTANCE_ZONE: ${{ secrets.GCE_INSTANCE_ZONE }}
   # DRIVE_URL: ${{ secrets.DRIVE_URL }}
