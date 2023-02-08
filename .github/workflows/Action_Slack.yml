@@ -2,13 +2,7 @@ name: Slack alert for main, dev branch
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-      - dev
-      - api
+    branches: ["main"]
 
 jobs:
   build:
@@ -17,9 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
     - name: Checkout
-
+    - uses: actions/checkout@v2
 
     - name: action-slack
       uses: 8398a7/action-slack@v3
