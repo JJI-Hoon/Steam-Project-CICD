@@ -13,8 +13,9 @@ on:
 
 jobs:
   build:
+    name: Slack_Alarm
     runs-on: ubuntu-latest
-  # uses는 다른 사람이 이미 만들어 놓은 action을 사용할 때 지정
+
     steps:
       - name: Checkout
        uses: actions/checkout@v2
