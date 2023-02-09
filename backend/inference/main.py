@@ -15,10 +15,7 @@ from ml.ease import dataload, get_user, inference, EASE
 app = FastAPI()
 
 '''
-
 Login Part -> Backend Part로 전향
-
-
 '''
 
 ############################class 정의 ###################################

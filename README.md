@@ -1,94 +1,89 @@
-# ✅ CI/CD Architecture - 인디안 프로젝트
-![](https://velog.velcdn.com/images/jjjjj/post/7ae60992-c219-4a39-957d-bec648067cc5/image.png)
+![sdfds2](https://user-images.githubusercontent.com/75313644/217699370-333fccd7-2a50-43bd-ae01-9517db260b0d.png)
+# IndieAn - 인디게임 추천
+### 🎮 유저에게 맞춤형 **인디게임**을 추천해주는 서비스 **IndieAn**입니다.   
+## 1. 기획
 
-> CI/CD Architecture 그림을 Draw.io를 활용해서 작성
+### **문제인식**
 
+- 2021년 기준, 전체 스팀게임 중 인디게임의 수가 96%를 차지하고 있음에도 실제 판매량과 판매수익은 AAA급 게임이 60-70%를 차지
+- 인디게임은 적은 개발 비용으로 인해 홍보가 크게 이루어지지 못해, 대중에게 노출되지 않음
+- 인디게임은 각각의 게임마다 개성이 강하므로 단순한 리스트업 보단 개인화 추천시스템이 필요함
 
-# ✅ CI/CD 작업 순서
+### **기대효과**
 
-> 1. API, DEV Branch에 개발 내용이 푸쉬가 필요
-2. 해당 레포지를 나의 레포지로 Fork 진행
-3. 레포지 Clone 진행 및 Docker Image Build (버전 관리 파일인 Requirements.txt → Api Requirements로 진행 / Issue 가능성 있음)
-4. 생성된 Image를 GCR에 Push
-5. VM Instance 생성 및 GCR의 이미지 VM에 Push
-6. Github Action에 필요한 Key 값들 GCP에서 가져와야 함
-7. 추가적으로, Slack Webhook Key 역시 필요
-8. 모든 Keys가 깃헙 레포지에 추가된다면, dev 브랜치에 푸쉬하여 깃헙 액션이 잘 작동하는 확인
-9. Action 진행 현황 파악 및 배포 완료 시 성공
+- 유저는 개인취향에 맞는 새로운 인디게임을 추천받음으로 다양한 게임경험을 할 수 있음
+- 인디게임 제작자는 자신들의 게임이 노출되는 기회를 갖게 됨
+- 인디게임 활성화로 인한 게임시장 활성화
 
+### **프로젝트 구조도**
 
-# CI/CD 작업 순서
+![플젝-페이지-1 drawio (2)](https://user-images.githubusercontent.com/75313644/217700589-19e33760-93b8-4a46-ac3f-47784cfb0755.png)
 
-## 1. Dockerfile 구축 및 Docker Image 빌드
+### **사용자 흐름도**
 
-- Dockerfile
-
-> 1. Backend
-2. Frontend
+![플젝-페이지-2 drawio](https://user-images.githubusercontent.com/75313644/217700599-4ebabeb8-e118-4545-9172-e7bb2ff7893f.png)
 
 
-```python
-FROM python:3.8.5-slim-buster
+## 2. 데이터 및 DB
 
-RUN mkdir steamrec
+### 데이터
 
-COPY start.sh /steamrec/start.sh
-COPY /backend /steamrec/backend
-COPY /frontend /steamrec/frontend
-COPY requirements.txt /steamrec/requirements.txt
+| 데이터 분류 | 데이터 설명 | 활용 | 크기 |
+| --- | --- | --- | --- |
+| 유저-아이템 상호작용 데이터 | [Steam Video Game and Bundle Data](https://cseweb.ucsd.edu/~jmcauley/datasets.html#steam_data), USCD에서 수집한 데이터 중 유저-아이템 상호작용 데이터 | 추천시스템 모델 학습 | 5153209*5 |
+| 게임 아이템 메타 데이터 | [2022 Steam Games Kaggle](https://www.kaggle.com/datasets/tristan581/all-55000-games-on-steam-november-2022)에서 수집한 게임 메타 데이터 | 아이템 필터링, 큐레이션,콘텐츠 기반 추천시스템 모델 | 55691*23 |
+| 유저 데이터 | 유저 ID를 받아 Steam API를 이용해 직접 받아오는 유저-아이템 상호작용 데이터 | 개인화 추천시스템 모델 Input | - |
 
-RUN pip install --upgrade pip \ 
-&& pip install -r /steamrec/requirements.txt
+### DataBase
 
-WORKDIR /steamrec
-
-EXPOSE 8001
-CMD ["sh", "start.sh"]
-```
-
-## 2. Image → GCR Push
-
-- GCR API 이용 허용 필요
-
-## 3. VM Instance 생성 및 서비스 계정 생성 필요
-
-- GCP Console에서 작업
-- 서비스 계정 생성 후 키 값 생성 필요
-- 이후, 권한 부여 작업도 필요
+![image](https://user-images.githubusercontent.com/75313644/217702168-a5530b02-7e5f-4ae2-86d1-0714e2d4fb07.png)
 
 
-## 4. Git Repository Secrets에 KEY 값 등 설정
+## 3. 모델
 
-![](https://velog.velcdn.com/images/jjjjj/post/535b123a-9383-4870-a8bf-0fdbc1560864/image.png)
+### 두 가지 고려사항
+
+- **성능과 Inference 속도의 Trade-off**: 좋은 성능을 갖고 있더라도 실 서비스 예측이 느리면 문제
+- **User Free & Item Cold-start 문제**: 실시간으로 추가되는 아이템들과 보유 데이터의 차이로 인한 cold-start문제, 개별 유저의 상호작용 데이터를 사용하기 위한 user free 모델 문제
+
+### [Embarrassingly Shallow Autoencoders for Sparse Data : EASE](https://arxiv.org/abs/1905.03375)
+
+![image](https://user-images.githubusercontent.com/75313644/217702651-16f3f24e-fe69-4003-a0a8-cf831bfa2790.png)
 
 
-## 5. ✅ Git workflow 작성
 
-- **어려웠던 점** : Github Action 실행 과정에 있어서 gcloud 환경을 세팅하는데 있어서 Python의 버전 충돌로 인한 에러를 마주하여 원인을 학습하는 부분에 고충을 겪음
-- **해결 과정** : 학습을 통해 CI/CD를 진행하는데 있어서 Cloud환경과 사용하는 언어의 버전을 맞춰줘야 함을 알 수 있었고, Workflow에 Python 버전을 업데이트 하는 과정을 통해 해결함
+## 4. 백엔드
+FastAPI를 통해 구현, 크게 **API Server**와 **Inference Server** 분류
+### API Server
+- 프론트엔드, 인퍼런스 서버 그리고 데이터베이스를 연결해주는 역할로 프론트엔드에 필요한 API를 제공하고 인퍼런스 결과를 데이터베이스에 저장해주는 서버를 구축
 
-```python
+### Inference Server
+- 백엔드로 부터 전송 받은 유저 히스토리 데이터를 모델에 인풋하여 인퍼런스를 통해 유저의 추천 결과를 백엔드로 다시 전송할 수 있는 서버를 구축
 
-   # Python 버전 관리 및 gcloud CLI 설정
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-          
-      - uses: google-github-actions/setup-gcloud@v0
-        with:
-          version: '318.0.0'
-          service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-```
 
-# CICD 환경 구동 자료
 
-- Github Action 작동
+## 5. 프론트엔드 
+![샘플2](https://user-images.githubusercontent.com/75313644/217703335-505873a8-1f65-49de-a9c5-50db6745128e.gif)
 
-![](https://velog.velcdn.com/images/jjjjj/post/932bb92a-e645-4de3-9679-10a291a8f777/image.png)
 
-- Slack Team 채널에 알림
 
-![](https://velog.velcdn.com/images/jjjjj/post/b59076c8-b751-4c2a-bc7a-daa49e1a124a/image.png)
+## 6. CICD
 
+### Github action & Slack
+![CICD_Architecture_](https://user-images.githubusercontent.com/28619804/217706048-fa7696c1-01ae-4d2b-8d6b-c54860653aa0.png)
+
+- **Docker & Github Action** : 백엔드와 프론트엔드를 도커를 이용해 이미지를 빌드하여, GCP 환경 VM에 업로드 진행 및 Github Action을 활용하여 CI/CD 환경 구축
+- **Slack 알림 기능 :** 협업을 위해 Github Action의 결과를 Slack에도 알림을 갈 수 있도록 하는 기능을 Github Action에서 구축
+       
+### Airflow
+- DataLake에 적제된 신규데이터를 DataWarehouse인 BigQuery에 적재한 뒤, 모델 학습을 통해 성능을 체크하는 하나의 Flow 구축
+- 실제 서비스 이후, Online data가 현재 모델 성능에 주는 영향을 파악해 추가 개선
+
+
+
+## 7. 팀소개
+![image](https://user-images.githubusercontent.com/75313644/217704990-176c03fc-988c-448e-b277-78af497d7baa.png)
+
+| [<img src="https://avatars.githubusercontent.com/u/94108712?v=4" width="200px">](https://github.com/KChanho) | [<img src="https://avatars.githubusercontent.com/u/22442453?v=4" width="200px">](https://github.com/sungsubae) | [<img src="https://avatars.githubusercontent.com/u/28619804?v=4" width="200px">](https://github.com/JJI-Hoon) | [<img src="https://avatars.githubusercontent.com/u/71113430?v=4" width="200px">](https://github.com/sobin98) | [<img src="https://avatars.githubusercontent.com/u/75313644?v=4" width="200px">](https://github.com/dnjstka0307) |
+| :--------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------:
+|                          [김찬호](https://github.com/KChanho)                            |                            [배성수](https://github.com/sungsubae)                             |                        [이지훈](https://github.com/JJI-Hoon)                           |                          [정소빈](https://github.com/sobin98)                           |                            [조원삼](https://github.com/dnjstka0307)                   
