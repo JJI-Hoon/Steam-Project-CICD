@@ -44,8 +44,10 @@ jobs:
       #   run : echo "wget --no-check-certificate 'https://docs.google.com/uc?etxport=download&id=$DRIVE_URL' -O $DRIVE_FILENAME" >> start.sh
       # - name: What
       #   run : echo "unzip -o $DRIVE_FILENAME" >> start.sh
-      - name: Run
+      - name: Backend-Run
         run : echo "python -m backend" >> start.sh
+      - name: Frontend-Run
+        run : echo "python -m frontend" >> start.sh
       
       # gcloud에서 Docker 사용할 수 있도록 설정
       - run: |-
